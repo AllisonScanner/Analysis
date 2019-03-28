@@ -3,33 +3,15 @@ import matplotlib.pyplot as plt
 
 class ASModel(object):
 
-    def __init__(self, L, g, gap1=0, gap2=0, plate_thickness = 0.00318,
-                 s = 60e-6, d = 0.01*0.0254,
-                 entrance_opening = 'in', exit_opening = 'in',
+    def __init__(self, L, g, l1, l2, s, d,
                  A_ion = 39.948, Q_ion = 9, KE_per_u = 12e3):
-        self.L = L
-        self.g = g
-        self.gap1 = gap1
-        self.gap2 = gap2
-        self.plate_thickness = plate_thickness
-        self.s = s
-        self.d = d
+        self.L = L/1000.
+        self.g = g/1000.
+        self.l1 = l1/1000.
+        self.l2 = l2/1000.
+        self.s = s/1000.
+        self.d = d/1000.
 
-        if entrance_opening == 'out':
-            self.l1 = self.gap1
-        elif entrance_opening == 'in':
-            self.l1 = self.gap1 + self.plate_thickness - self.d
-        else:
-            raise Exception ("Entrance slit opening direction not defined")
-
-        if exit_opening == 'out':
-            self.l2 = self.gap2
-        elif exit_opening == 'in':
-            self.l2 = self.gap2 + self.plate_thickness - self.d
-        else:
-            raise Exception ("Exit slit opening direction not defined")
-
-        self.chamber_L = self.L + self.gap1 + self.gap2
         self.L_interslit = self.L + self.l1 + self.l2
 
         self.A_ion = A_ion
@@ -135,16 +117,3 @@ class ASModel(object):
             return ((xp - xp_tilde)*c1 + (xp_ref - xp)*c2)/(xp_ref - xp_tilde)
         else:
             return (xp_max - xp) / (xp_max - xp_ref) * c1
-
-class FribASModel(ASModel):
-
-    def __init__(self, scanner, A_ion = 39.948, Q_ion = 9, KE_per_u = 12e3):
-        if scanner == 'artemis':
-            ASModel.__init__(self, L = 0.07185, g = 0.00791, gap1 = 0.00201, gap2 = 0.00206,
-                                    plate_thickness = 0.00318, s = 60e-6, d = 254e-6,
-                                    entrance_opening = 'in', exit_opening = 'in',
-                                    A_ion = A_ion, Q_ion = Q_ion, KE_per_u = KE_per_u)
-        elif scanner == 'venus':
-            raise Exception('Venus scanner not yet installed')
-        else:
-            raise Exception('FRIB AS scanner must equal "artemis" or "venus"')

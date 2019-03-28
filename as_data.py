@@ -3,15 +3,8 @@ import matplotlib.pyplot as plt
 import matplotlib.path as mplPath
 import matplotlib.patches as patches
 import matplotlib.colors as colors
-from matplotlib import cm
-from mpl_toolkits.mplot3d import Axes3D
-from scipy import stats
-import matplotlib.gridspec as gridspec
 from scipy.linalg import svd
 from scipy.optimize import nnls
-
-import json
-from collections import OrderedDict
 
 class ASData(object):
 
@@ -21,7 +14,7 @@ class ASData(object):
     X_grid,
     V_grid,
     x_or_y = 'x',
-    name = '', threshold_sigma = 0.,
+    name = '', threshold_sigma = 2.,
     apply_filter = 1,
     noise_gradient = False,
     correction = "None"):
@@ -135,8 +128,15 @@ class ASData(object):
         self.I_grid_no_noise_prelim = self.no_noise.reshape(self.vol_count, self.pos_count)
         self.I_grid_no_noise = np.copy(self.I_grid_no_noise_prelim)
 
-        for i in range(apply_filter):
+        iteration_end = False
+
+        while not iteration_end:
+            I_grid_dummy = np.copy(self.I_grid_no_noise)
             self.I_grid_no_noise = self.isle_filter(self.I_grid_no_noise, kernel_size = 3, threshold = threshold_sigma)
+            iteration_end = np.array_equal(I_grid_dummy, self.I_grid_no_noise)
+
+#        for i in range(apply_filter):
+#            self.I_grid_no_noise = self.isle_filter(self.I_grid_no_noise, kernel_size = 3, threshold = threshold_sigma)
 
     def noise_removal_with_gradient(self, I_grid_in, threshold_sigma, apply_filter):
 
@@ -326,22 +326,6 @@ class ASData(object):
             matrix_A_reduced[:,i] = matrix_A[:, include_index[i]]
 
         return matrix_A_reduced, include_index
-
-    def output_data(self):
-
-        res = self.parameters_dict
-
-        if self.perform_scan:
-            import phantasy
-            mp = phantasy.MachinePortal (machine ='LEBT')
-            lat = mp.work_lattice_conf
-            lat.sync_settings (data_source ='control' )
-
-        # save the data in JSON format
-        with open( self.name + '_Data.json','w') as outfile:
-            json.dump(res,outfile,indent = 4)
-            if self.perform_scan:
-                json.dump(lat.settings , outfile)
 
     def in_out_polygon(self, X_grid, V_grid, raw_data, beam_polygon):
 
@@ -587,7 +571,7 @@ class ASData(object):
     def phase_space_subplot(self, ax, Y_grid, data_grid, ellipse = False, ellipse_coord = [], polygon = False, sign_contrast = False):
 
         if sign_contrast:
-            data_grid = (data_grid > 0)
+            data_grid = (data_grid > 0).astype(int)
 
         pv_fig = ax.pcolormesh(self.X_grid, Y_grid, data_grid, cmap=plt.get_cmap('jet'))
 #        pv_fig = ax.pcolormesh(self.X_grid, Y_grid, data_grid, norm=colors.LogNorm())
