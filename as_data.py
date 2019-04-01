@@ -15,7 +15,6 @@ class ASData(object):
     V_grid,
     x_or_y = 'x',
     name = '', threshold_sigma = 2.,
-    apply_filter = 1,
     noise_gradient = False,
     correction = "None"):
 
@@ -32,11 +31,11 @@ class ASData(object):
         # First iteration
         prelim_dict = self.prelim_noise( self.I_grid_raw )
         self.I_grid_in = self.in_out_ellipse(self.X_grid, self.Y_grid, self.I_grid_raw, prelim_dict = prelim_dict, how_many_sigma = 6)
-        self.data_analysis(self.I_grid_in, threshold_sigma, apply_filter, show_results = False, noise_gradient = False)
+        self.data_analysis(self.I_grid_in, threshold_sigma, show_results = False, noise_gradient = False)
 
         # Second iteration
         self.I_grid_in = self.in_out_ellipse(self.X_grid, self.Y_grid, self.I_grid_raw, prelim_dict = self.parameters_dict, how_many_sigma = 6)
-        self.data_analysis(self.I_grid_in, threshold_sigma, apply_filter, show_results = False, noise_gradient = False)
+        self.data_analysis(self.I_grid_in, threshold_sigma, show_results = False, noise_gradient = False)
         temporary_dict = self.parameters_dict.copy()
 
         ellipse_valid = 0
@@ -46,7 +45,7 @@ class ASData(object):
 
             self.I_grid_in = self.in_out_ellipse(self.X_grid, self.Y_grid, self.I_grid_raw, prelim_dict = temporary_dict, how_many_sigma = sigma)
 #            self.noise_cutoff_plot(self.I_grid_in, threshold_sigma)
-            self.data_analysis(self.I_grid_in, threshold_sigma, apply_filter, show_results = True, noise_gradient = noise_gradient, correction=self.correction)
+            self.data_analysis(self.I_grid_in, threshold_sigma, show_results = True, noise_gradient = noise_gradient, correction=self.correction)
             temporary_dict = self.parameters_dict.copy()
 
             ellipse_valid = int(input('Enter: 1 if ellipse area is okay, 2 if not'))
@@ -78,13 +77,13 @@ class ASData(object):
 
         self.grid_to_res_ratio = (self.angle_step*self.pos_step/1000) / (self.scanner.dxp_conv*self.scanner.s)
 
-    def data_analysis(self, I_grid_in, threshold_sigma, apply_filter, show_results = True, noise_gradient = False,
+    def data_analysis(self, I_grid_in, threshold_sigma, show_results = True, noise_gradient = False,
     correction = 'None'):
 
         if noise_gradient:
-            self.noise_removal_with_gradient(I_grid_in, threshold_sigma, apply_filter)
+            self.noise_removal_with_gradient(I_grid_in, threshold_sigma)
         else:
-            self.noise_removal_without_gradient(I_grid_in, threshold_sigma, apply_filter)
+            self.noise_removal_without_gradient(I_grid_in, threshold_sigma)
 
         if correction == 'None':
             self.data_analysis_no_correction()
@@ -110,7 +109,7 @@ class ASData(object):
             print('gamma = %s 1/m' %self.parameters_dict['gamma'])
             print('total projected current = %s A' %self.parameters_dict['I_total'])
 
-    def noise_removal_without_gradient(self, I_grid_in, threshold_sigma, apply_filter):
+    def noise_removal_without_gradient(self, I_grid_in, threshold_sigma):
 
         self.no_noise = np.copy(I_grid_in)
 
@@ -129,16 +128,15 @@ class ASData(object):
         self.I_grid_no_noise = np.copy(self.I_grid_no_noise_prelim)
 
         iteration_end = False
+        self.filter_iteration = 0
 
         while not iteration_end:
             I_grid_dummy = np.copy(self.I_grid_no_noise)
-            self.I_grid_no_noise = self.isle_filter(self.I_grid_no_noise, kernel_size = 3, threshold = threshold_sigma)
+            self.I_grid_no_noise = self.island_filter(self.I_grid_no_noise, kernel_size = 3, threshold = threshold_sigma)
+            self.filter_iteration += 1
             iteration_end = np.array_equal(I_grid_dummy, self.I_grid_no_noise)
 
-#        for i in range(apply_filter):
-#            self.I_grid_no_noise = self.isle_filter(self.I_grid_no_noise, kernel_size = 3, threshold = threshold_sigma)
-
-    def noise_removal_with_gradient(self, I_grid_in, threshold_sigma, apply_filter):
+    def noise_removal_with_gradient(self, I_grid_in, threshold_sigma):
 
         self.no_noise = np.copy(I_grid_in).reshape(self.vol_count, self.pos_count)
 
@@ -201,8 +199,14 @@ class ASData(object):
         self.I_grid_no_noise_prelim = self.no_noise.reshape(self.vol_count, self.pos_count)
         self.I_grid_no_noise = np.copy(self.I_grid_no_noise_prelim)
 
-        for i in range(apply_filter):
-            self.I_grid_no_noise = self.isle_filter(self.I_grid_no_noise, kernel_size = 3, threshold = threshold_sigma)
+        iteration_end = False
+        self.filter_iteration = 0
+
+        while not iteration_end:
+            I_grid_dummy = np.copy(self.I_grid_no_noise)
+            self.I_grid_no_noise = self.island_filter(self.I_grid_no_noise, kernel_size = 3, threshold = threshold_sigma)
+            self.filter_iteration += 1
+            iteration_end = np.array_equal(I_grid_dummy, self.I_grid_no_noise)
 
     def data_analysis_no_correction(self):
 
@@ -449,7 +453,7 @@ class ASData(object):
         plt.axvline(x= self.noise_avg + threshold_sigma*self.noise_sd)
         plt.show()
 
-    def isle_filter(self, input_grid, kernel_size = 7, threshold = 2):
+    def island_filter(self, input_grid, kernel_size = 7, threshold = 2):
 
         if kernel_size != 3 and kernel_size != 5 and kernel_size != 7:
             raise Exception("kernel size not defined correctly")
