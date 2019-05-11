@@ -631,8 +631,8 @@ class ASData(object):
             rotation_matrix = eigen_vector_matrix
 
             circle_list = np.array([ [np.cos(theta), np.sin(theta)] for theta in np.linspace(0., 2*np.pi, 601) ])
-            ellipse_u = np.array([[u0[0]*np.sqrt(np.pi*prelim_emit/eigen_values[0]),
-                                  u0[1]*np.sqrt(np.pi*prelim_emit/eigen_values[1])] for u0 in circle_list])
+            ellipse_u = np.array([[u0[0]*np.sqrt(4.*prelim_emit/eigen_values[0]),
+                                  u0[1]*np.sqrt(4.*prelim_emit/eigen_values[1])] for u0 in circle_list])
             ellipse_x = np.array( [ np.dot( rotation_matrix , u) + np.array([prelim_x, prelim_xp])  for u in ellipse_u ] )
 
             ax.scatter(ellipse_x[:,0], ellipse_x[:,1], s=0.2, color='w')
