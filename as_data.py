@@ -427,7 +427,7 @@ class ASData(object):
 
                 i_new, j_new = np.dot( np.linalg.inv(rotation_matrix) , np.array([i_tilde,j_tilde]))
 
-                if eigen_values[0]*i_new**2 + eigen_values[1]*j_new**2 <= np.pi*how_many_sigma*prelim_emit:
+                if eigen_values[0]*i_new**2 + eigen_values[1]*j_new**2 <= how_many_sigma*prelim_emit:
                     region_in.append([i, j, raw_data[counter]])
 
                     r = prelim_gamma*i_tilde**2 + prelim_alpha*2*i_tilde*j_tilde + prelim_beta*j_tilde**2
