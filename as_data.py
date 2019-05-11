@@ -30,16 +30,16 @@ class ASData(object):
 
         # First iteration
         prelim_dict = self.prelim_noise( self.I_grid_raw )
-        self.I_grid_in = self.in_out_ellipse(self.X_grid, self.Y_grid, self.I_grid_raw, prelim_dict = prelim_dict, how_many_sigma = 6)
+        self.I_grid_in = self.in_out_ellipse(self.X_grid, self.Y_grid, self.I_grid_raw, prelim_dict = prelim_dict, how_many_sigma = 20)
         self.data_analysis(self.I_grid_in, threshold_sigma, show_results = False, noise_gradient = False)
 
         # Second iteration
-        self.I_grid_in = self.in_out_ellipse(self.X_grid, self.Y_grid, self.I_grid_raw, prelim_dict = self.parameters_dict, how_many_sigma = 6)
+        self.I_grid_in = self.in_out_ellipse(self.X_grid, self.Y_grid, self.I_grid_raw, prelim_dict = self.parameters_dict, how_many_sigma = 20)
         self.data_analysis(self.I_grid_in, threshold_sigma, show_results = False, noise_gradient = False)
         temporary_dict = self.parameters_dict.copy()
 
         ellipse_valid = 0
-        sigma = 8
+        sigma = 25
 
         while ellipse_valid != 1:
 
@@ -415,8 +415,8 @@ class ASData(object):
 ###     eigenvectors equal eigen_vector_matrix[:,0] and eigen_vector_matrix[:,1]
 
         self.circle_list = np.array([ [np.cos(theta), np.sin(theta)] for theta in np.linspace(0., 2*np.pi, 61) ])
-        self.ellipse_u = np.array([[u0[0]*np.sqrt(np.pi*how_many_sigma*prelim_emit/eigen_values[0]),
-                              u0[1]*np.sqrt(np.pi*how_many_sigma*prelim_emit/eigen_values[1])] for u0 in self.circle_list])
+        self.ellipse_u = np.array([[u0[0]*np.sqrt(how_many_sigma*prelim_emit/eigen_values[0]),
+                              u0[1]*np.sqrt(how_many_sigma*prelim_emit/eigen_values[1])] for u0 in self.circle_list])
         self.ellipse_x = np.array( [ np.dot( rotation_matrix , u) + np.array([prelim_x, prelim_xp])  for u in self.ellipse_u ] )
 
         for j in Y_grid[:,0]:
